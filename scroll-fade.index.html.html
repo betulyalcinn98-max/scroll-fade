@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCROLL/FADE - Jane's Story</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Split Screen Layout */
+        .split-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Left Side - Jane (Fixed) */
+        .left-panel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 40%;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        /* Right Side - Story (Scrollable) */
+        .right-panel {
+            margin-left: 40%;
+            width: 60%;
+            min-height: 100vh;
+            background: #0a0a0a;
+        }
+
+        /* Intro Section */
+        #intro {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(180deg, #000 0%, #0a0a0a 100%);
+        }
+
+        #intro h1 {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(45deg, #ff0080, #ff8c00, #8b00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        #intro p {
+            font-size: 1.2rem;
+            color: #888;
+            max-width: 500px;
+            line-height: 1.8;
+            margin: 1rem auto;
+        }
+
+        .warning {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+            color: #ff6666;
+            font-size: 0.9rem;
+            max-width: 500px;
+        }
+
+        .scroll-indicator {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #666;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(10px); }
+        }
+
+        /* Character Container */
+        .character-container {
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Character Name Tag */
+        .name-tag {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.5s ease-out;
+        }
+
+        .name-tag .name {
+            color: #4CAF50;
+            font-weight: 700;
+            font-size: 1.8rem;
+            transition: all 0.5s ease-out;
+        }
+
+        .name-tag .status {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Character Visual */
+        .character-visual {
+            position: relative;
+            width: 200px;
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Head - pure skin tone, NO BROWN */
+        .char-head {
+            width: 100px;
+            height: 100px;
+            background: #ffd5b8;
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 15px;
+            transition: all 0.5s ease-out;
+            box-shadow: 0 5px 30px rgba(255, 213, 184, 0.4);
+            z-index: 2;
+        }
+
+        /* Hair - VERY SMALL top bun style - NO BANGS */
+        .hair {
+            width: 90px;
+            height: 35px;
+            background: linear-gradient(180deg, #3d2011 0%, #5a2f15 100%);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            transition: all 0.5s ease-out;
+            overflow: visible;
+            z-index: 1;
+        }
+
+        /* NO BANGS - removed completely */
+        .hair::before {
+            content: '';
+            display: none;
+        }
+
+        /* Hair back - small */
+        .hair::after {
+            content: '';
+            width: 90px;
+            height: 30px;
+            background: linear-gradient(180deg, #5a2f15 0%, #4d2712 100%);
+            position: absolute;
+            top: 20px;
+            left: 0;
+            border-radius: 0 0 50% 50%;
+            z-index: 1;
+        }
+
+        /* Left hair - SMALL side strands only */
+        .hair-left {
+            width: 25px;
+            height: 55px;
+            background: linear-gradient(135deg, #3d2011 0%, #5a2f15 100%);
+            position: absolute;
+            left: 0px;
+            top: 25px;
+            border-radius: 40% 0 0 50%;
+            transition: all 0.5s ease-out;
+            z-index: 1;
+        }
+
+        /* Right hair - SMALL side strands only */
+        .hair-right {
+            width: 25px;
+            height: 55px;
+            background: linear-gradient(225deg, #3d2011 0%, #5a2f15 100%);
+            position: absolute;
+            right: 0px;
+            top: 25px;
+            border-radius: 0 40% 50% 0;
+            transition: all 0.5s ease-out;
+            z-index: 1;
+        }
+
+        /* Eyes - BRATZ CAT-EYE STYLE */
+        .eyes {
+            display: flex;
+            gap: 20px;
+            position: absolute;
+            top: 38px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        .eye {
+            width: 18px;
+            height: 14px;
+            background: #000;
+            border-radius: 60% 40% 40% 60%;
+            position: relative;
+            transition: all 0.5s ease-out;
+            transform: rotate(-5deg);
+        }
+
+        .eye:last-child {
+            transform: rotate(5deg);
+        }
+
+        /* Big sparkly highlight - Bratz style */
+        .eye::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Secondary sparkle */
+        .eye::after {
+            content: '';
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Eyelashes - LONG Bratz style THICK */
+        .eyelash {
+            width: 24px;
+            height: 4px;
+            background: #000;
+            position: absolute;
+            top: -5px;
+            left: -3px;
+            border-radius: 4px;
+            transform: rotate(-30deg);
+            transition: all 0.5s ease-out;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+        }
+
+        .eye:last-child .eyelash {
+            transform: rotate(30deg);
+            left: auto;
+            right: -3px;
+        }
+
+        /* Multiple lash layers */
+        .eyelash::before {
+            content: '';
+            width: 20px;
+            height: 3px;
+            background: #000;
+            position: absolute;
+            top: -4px;
+            left: 2px;
+            border-radius: 3px;
+            transform: rotate(-8deg);
+        }
+
+        .eyelash::after {
+            content: '';
+            width: 16px;
+            height: 2px;
+            background: #000;
+            position: absolute;
+            top: -7px;
+            left: 4px;
+            border-radius: 2px;
+            transform: rotate(-5deg);
+        }
+
+        /* Eyeliner - WINGED thick Bratz style */
+        .eyeliner {
+            width: 26px;
+            height: 4px;
+            background: #000;
+            position: absolute;
+            top: -2px;
+            left: -4px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.5s ease-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .eye:first-child .eyeliner {
+            transform: rotate(-22deg);
+        }
+
+        .eye:last-child .eyeliner {
+            transform: rotate(22deg);
+            left: auto;
+            right: -4px;
+        }
+
+        /* Wing tip */
+        .eyeliner::after {
+            content: '';
+            width: 8px;
+            height: 4px;
+            background: #000;
+            position: absolute;
+            right: -6px;
+            top: -1px;
+            border-radius: 0 4px 4px 0;
+            transform: rotate(15deg);
+        }
+
+        .eye:last-child .eyeliner::after {
+            left: -6px;
+            right: auto;
+            border-radius: 4px 0 0 4px;
+            transform: rotate(-15deg);
+        }
+
+        /* Eye bags (initially hidden) */
+        .eye-bags {
+            width: 18px;
+            height: 10px;
+            background: rgba(120, 80, 150, 0);
+            position: absolute;
+            top: 43px;
+            border-radius: 0 0 15px 15px;
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        .eye-bag-left { left: 23px; }
+        .eye-bag-right { right: 23px; }
+
+        /* Eyebrows - super thin and arched Bratz style */
+        .eyebrow {
+            width: 24px;
+            height: 2px;
+            background: #000;
+            position: absolute;
+            top: 26px;
+            border-radius: 50%;
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        .eyebrow-left { 
+            left: 14px;
+            transform: rotate(-15deg);
+            border-radius: 0 50% 50% 50%;
+        }
+
+        .eyebrow-right { 
+            right: 14px;
+            transform: rotate(15deg);
+            border-radius: 50% 0 50% 50%;
+        }
+
+        /* Makeup (blush) */
+        .blush {
+            width: 20px;
+            height: 12px;
+            background: rgba(255, 150, 150, 0.3);
+            border-radius: 50%;
+            position: absolute;
+            top: 50px;
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        .blush-left { left: 10px; }
+        .blush-right { right: 10px; }
+
+        /* Lips - BRATZ STYLE super glossy and plump */
+        .lips {
+            width: 38px;
+            height: 20px;
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        /* Upper lip - glossy with cupid's bow */
+        .lips::before {
+            content: '';
+            width: 38px;
+            height: 10px;
+            background: linear-gradient(180deg, #d94d7a 0%, #ff6b9d 100%);
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 50% 50% 30% 30%;
+            transition: all 0.5s ease-out;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Lower lip - plump and glossy */
+        .lips::after {
+            content: '';
+            width: 38px;
+            height: 11px;
+            background: linear-gradient(180deg, #ff6b9d 0%, #ff8cb4 100%);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            border-radius: 30% 30% 50% 50%;
+            transition: all 0.5s ease-out;
+            box-shadow: inset 0 -3px 6px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Lip gloss effect - centered highlight */
+        .lip-gloss {
+            width: 16px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.9;
+            transition: all 0.5s ease-out;
+            filter: blur(3px);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+            z-index: 3;
+        }
+
+        /* Smile indicator - curved line below lips */
+        .mouth-curve {
+            width: 35px;
+            height: 12px;
+            border: 2px solid rgba(0, 0, 0, 0);
+            border-top: none;
+            border-radius: 0 0 50% 50%;
+            position: absolute;
+            bottom: 13px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease-out;
+            z-index: 3;
+        }
+
+        /* Body - Feminine shape */
+        .char-body {
+            width: 70px;
+            height: 110px;
+            background: linear-gradient(180deg, #ff6b9d 0%, #ff8cb4 100%);
+            border-radius: 35px 35px 15px 15px;
+            position: relative;
+            transition: all 0.5s ease-out;
+            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        /* Arms */
+        .arms {
+            display: flex;
+            justify-content: space-between;
+            width: 140px;
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .arm {
+            width: 18px;
+            height: 70px;
+            background: #ffd5b8;
+            border-radius: 12px;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Phone in hand */
+        .phone {
+            width: 25px;
+            height: 45px;
+            background: #2c2c2c;
+            border-radius: 4px;
+            position: absolute;
+            right: -30px;
+            top: 60px;
+            opacity: 0;
+            transition: all 0.5s ease-out;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0);
+            overflow: visible;
+        }
+
+        .phone::after {
+            content: '';
+            width: 21px;
+            height: 38px;
+            background: linear-gradient(45deg, #ff0080, #00ffff, #ff0080);
+            background-size: 200% 200%;
+            position: absolute;
+            top: 3px;
+            left: 2px;
+            border-radius: 3px;
+            animation: phone-glow 2s infinite;
+        }
+
+        @keyframes phone-glow {
+            0%, 100% { 
+                opacity: 0.6;
+                background-position: 0% 50%;
+            }
+            50% { 
+                opacity: 1;
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Floating shopping icons from phone - IN FRONT OF JANE */
+        .shopping-icon {
+            position: fixed;
+            font-size: 2rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 100;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Icons that stick to Jane */
+        .shopping-icon.stuck {
+            transition: none;
+            opacity: 1;
+            animation: pulse-stuck 2s ease-in-out infinite;
+            z-index: 100;
+        }
+
+        @keyframes pulse-stuck {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+            }
+            50% {
+                transform: scale(1.15) rotate(5deg);
+            }
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Final consumption wall - REMOVED, icons stick to Jane instead */
+        .consumption-wall {
+            display: none;
+        }
+
+        .consumption-wall.visible {
+            opacity: 1;
+        }
+
+        .wall-icon {
+            font-size: 2.5rem;
+            animation: pulse-icon 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(156, 39, 176, 0.5));
+        }
+
+        @keyframes pulse-icon {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        /* Legs */
+        .legs {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .leg {
+            width: 24px;
+            height: 90px;
+            background: linear-gradient(180deg, #4a90e2 0%, #357abd 100%);
+            border-radius: 12px;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Shoes */
+        .leg::after {
+            content: '';
+            width: 32px;
+            height: 15px;
+            background: #fff;
+            position: absolute;
+            bottom: -5px;
+            left: -4px;
+            border-radius: 15px 15px 5px 5px;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Story Chapter Sections */
+        .chapter-section {
+            min-height: 100vh;
+            padding: 6rem 4rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .chapter-content {
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .chapter-number {
+            color: #4CAF50;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .chapter-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            color: #4CAF50;
+            transition: color 0.5s ease-out;
+        }
+
+        .chapter-text {
+            line-height: 1.9;
+            color: #ccc;
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat {
+            display: inline-block;
+            background: rgba(76, 175, 80, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin: 0.4rem;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+            font-size: 0.9rem;
+            transition: all 0.5s ease-out;
+        }
+
+        .highlight {
+            color: #ff9800;
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        /* Chapter specific colors */
+        #chapter2 .chapter-number,
+        #chapter2 .chapter-title { color: #ff9800; }
+        #chapter2 .stat {
+            background: rgba(255, 152, 0, 0.15);
+            border-color: rgba(255, 152, 0, 0.4);
+        }
+
+        #chapter3 .chapter-number,
+        #chapter3 .chapter-title { color: #ff5722; }
+        #chapter3 .stat {
+            background: rgba(255, 87, 34, 0.15);
+            border-color: rgba(255, 87, 34, 0.4);
+        }
+
+        #chapter4 .chapter-number,
+        #chapter4 .chapter-title { color: #f44336; }
+        #chapter4 .stat {
+            background: rgba(244, 67, 54, 0.15);
+            border-color: rgba(244, 67, 54, 0.4);
+        }
+
+        #chapter5 .chapter-number,
+        #chapter5 .chapter-title { color: #9c27b0; }
+        #chapter5 .stat {
+            background: rgba(156, 39, 176, 0.15);
+            border-color: rgba(156, 39, 176, 0.4);
+        }
+
+        /* Algorithm Box */
+        .algorithm-box {
+            background: rgba(20, 0, 40, 0.9);
+            border: 2px solid #9c27b0;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .algorithm-box h3 {
+            color: #9c27b0;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .algorithm-line {
+            color: #00ff00;
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .algorithm-line.warning {
+            color: #ff0000;
+            font-weight: 600;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+
+        /* Final Stats Section */
+        #final-stats {
+            background: #000;
+            padding: 6rem 4rem;
+        }
+
+        .final-title {
+            font-size: 3.5rem;
+            color: #9c27b0;
+            text-align: center;
+            margin-bottom: 3rem;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: rgba(156, 39, 176, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #9c27b0;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            color: #888;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Resources Section */
+        #resources {
+            background: linear-gradient(180deg, #000 0%, #0a0a0a 100%);
+            padding: 6rem 4rem;
+        }
+
+        .resources-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #4CAF50, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .resources-intro {
+            text-align: center;
+            color: #888;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+            line-height: 1.8;
+        }
+
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .resource-card {
+            background: rgba(76, 175, 80, 0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #fff;
+            display: block;
+        }
+
+        .resource-card:hover {
+            background: rgba(76, 175, 80, 0.15);
+            border-color: rgba(76, 175, 80, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+        }
+
+        .resource-card h4 {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .resource-card p {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .action-steps {
+            background: rgba(76, 175, 80, 0.05);
+            padding: 3rem;
+            border-radius: 15px;
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            margin: 4rem auto 0;
+            max-width: 1000px;
+        }
+
+        .action-steps h3 {
+            color: #4CAF50;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .action-steps ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .action-steps li {
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .action-steps li::before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        /* Credits */
+        #credits {
+            background: #000;
+            padding: 4rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        #credits a {
+            color: #9c27b0;
+            text-decoration: none;
+        }
+
+        #credits a:hover {
+            color: #ba68c8;
+        }
+
+        /* Scroll indicators */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 40%;
+            width: 4px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 200;
+        }
+
+        .scroll-progress-bar {
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(180deg, #4CAF50, #ff9800, #f44336, #9c27b0);
+            transition: height 0.1s ease-out;
+        }
+
+        .scroll-counter {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 200;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .counter-item {
+            text-align: center;
+        }
+
+        .counter-label {
+            color: #888;
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .counter-value {
+            color: #9c27b0;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .left-panel {
+                width: 35%;
+            }
+            .right-panel {
+                margin-left: 35%;
+                width: 65%;
+            }
+            .scroll-progress {
+                left: 35%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+            }
+            .left-panel {
+                position: relative;
+                width: 100%;
+                height: 50vh;
+            }
+            .right-panel {
+                margin-left: 0;
+                width: 100%;
+            }
+            .scroll-progress {
+                display: none;
+            }
+            .chapter-section {
+                padding: 4rem 2rem;
+            }
+            .stats-grid,
+            .resource-grid,
+            .action-steps ul {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress">
+        <div class="scroll-progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- Scroll Counter -->
+    <div class="scroll-counter">
+        <div class="counter-item">
+            <div class="counter-label">DISTANCE SCROLLED</div>
+            <div class="counter-value"><span id="scroll-distance">0</span>m</div>
+        </div>
+        <div class="counter-item">
+            <div class="counter-label">TIME WASTED</div>
+            <div class="counter-value"><span id="time-wasted">0</span>min</div>
+        </div>
+    </div>
+
+    <!-- Split Container -->
+    <div class="split-container">
+        <!-- Left Panel - Jane (Fixed) -->
+        <div class="left-panel">
+            <div class="character-container">
+                <div class="name-tag">
+                    <div class="name" id="char-name">Jane</div>
+                    <div class="status" id="char-status">Age 24 • Happy & Healthy</div>
+                </div>
+                
+                <div class="character-visual">
+                    <div class="char-head">
+                        <div class="hair">
+                            <div class="hair-left"></div>
+                            <div class="hair-right"></div>
+                        </div>
+                        <div class="eyebrow eyebrow-left"></div>
+                        <div class="eyebrow eyebrow-right"></div>
+                        <div class="eyes">
+                            <div class="eye">
+                                <div class="eyelash"></div>
+                                <div class="eyeliner"></div>
+                            </div>
+                            <div class="eye">
+                                <div class="eyelash"></div>
+                                <div class="eyeliner"></div>
+                            </div>
+                        </div>
+                        <div class="eye-bags eye-bag-left"></div>
+                        <div class="eye-bags eye-bag-right"></div>
+                        <div class="blush blush-left"></div>
+                        <div class="blush blush-right"></div>
+                        <div class="lips"></div>
+                        <div class="lip-gloss"></div>
+                        <div class="mouth-curve"></div>
+                    </div>
+                    
+                    <div class="char-body">
+                        <div class="arms">
+                            <div class="arm"></div>
+                            <div class="arm">
+                                <div class="phone"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="legs">
+                        <div class="leg"></div>
+                        <div class="leg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Story (Scrollable) -->
+        <div class="right-panel">
+            <!-- Intro -->
+            <section id="intro">
+                <h1>SCROLL/FADE</h1>
+                <p>The true story of how social media turns people into products.</p>
+                <p style="margin-top: 1.5rem;">This is Jane's journey from human to data point.</p>
+                <div class="warning">
+                    ⚠️ Content Warning: This experience addresses themes of mental health, addiction, and self-harm.
+                </div>
+                <div class="scroll-indicator">↓ Scroll to begin Jane's story</div>
+            </section>
+
+            <!-- Chapter 1 -->
+            <section id="chapter1" class="chapter-section">
+                <div class="chapter-content">
+                    <div class="chapter-number">CHAPTER 01</div>
+                    <h2 class="chapter-title">The Beginning</h2>
+                    <p class="chapter-text">
+                        Meet Jane. She's 24 years old, fresh out of college with a degree in marketing. 
+                        She loves hiking, cooking with friends, and practicing yoga every Sunday morning.
+                    </p>
+                    <p class="chapter-text">
+                        Jane is <span class="highlight">happy</span>. She has real relationships. 
+                        She sleeps 8 hours a night. She feels <span class="highlight">alive</span>.
+                    </p>
+                    <div style="margin: 2rem 0;">
+                        <span class="stat">8h sleep/night</span>
+                        <span class="stat">3 gym sessions/week</span>
+                        <span class="stat">Weekly brunches with friends</span>
+                    </div>
+                    <p class="chapter-text" style="color: #888;">
+                        Then, one day, she posts a photo from her hike. It goes viral. 
+                        <span style="color: #ff9800; font-weight: 600;">10,000 likes</span>. 
+                        Her DMs explode with brand deals.
+                    </p>
+                    <p class="chapter-text" style="font-style: italic; color: #ff9800; margin-top: 1rem;">
+                        "Maybe I could make this work," she thinks.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Chapter 2 -->
+            <section id="chapter2" class="chapter-section">
+                <div class="chapter-content">
+                    <div class="chapter-number">CHAPTER 02</div>
+                    <h2 class="chapter-title">The Rise</h2>
+                    <p class="chapter-text">
+                        Jane quits her job. She's going to be a full-time influencer.
+                    </p>
+                    <p class="chapter-text">
+                        At first, it's <span class="highlight">exciting</span>. Brands send her free products. 
+                        She attends exclusive events. Her follower count climbs daily. The money starts flowing in.
+                    </p>
+                    <div style="margin: 2rem 0;">
+                        <span class="stat">50K followers</span>
+                        <span class="stat">$3,000/sponsored post</span>
+                        <span class="stat">5-8 posts per day</span>
+                    </div>
+                    <p class="chapter-text" style="color: #888;">
+                        But something changes. She starts checking her phone every 5 minutes. 
+                        She films everything. Her friends notice she's always "working."
+                    </p>
+                    <p class="chapter-text">
+                        <span class="highlight">"I'll just check my notifications real quick,"</span> 
+                        becomes her most common phrase.
+                    </p>
+                    <p class="chapter-text" style="color: #666; font-size: 0.95rem; margin-top: 1.5rem;">
+                        She doesn't notice she's stopped calling her mom. She doesn't notice she's eating every meal while staring at analytics. She doesn't notice she's becoming someone else.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Chapter 3 -->
+            <section id="chapter3" class="chapter-section">
+                <div class="chapter-content">
+                    <div class="chapter-number">CHAPTER 03</div>
+                    <h2 class="chapter-title">The Price of Fame</h2>
+                    <p class="chapter-text">
+                        Jane now has 500K followers. She's making $15,000 a month. She's "successful."
+                    </p>
+                    <p class="chapter-text">
+                        But she can't remember the last time she saw her friends. She hasn't been to the gym in months. 
+                        She sleeps 4 hours a night because she's optimizing post timing for engagement in different time zones.
+                    </p>
+                    <div style="margin: 2rem 0;">
+                        <span class="stat">500K followers</span>
+                        <span class="stat">4h sleep/night</span>
+                        <span class="stat">12h screen time/day</span>
+                    </div>
+                    <p class="chapter-text">
+                        Dark circles under her eyes. Weight gain from stress eating. Constant anxiety about the algorithm.
+                    </p>
+                    <p class="chapter-text">
+                        She owns <span class="highlight">47 of the same white t-shirt</span> for photos. 
+                        She hasn't cooked a meal in 3 months—everything is content.
+                    </p>
+                    <p class="chapter-text" style="color: #f44336; font-weight: 600; margin-top: 1.5rem;">
+                        She doesn't recognize herself in the mirror anymore.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Chapter 4 -->
+            <section id="chapter4" class="chapter-section">
+                <div class="chapter-content">
+                    <div class="chapter-number">CHAPTER 04</div>
+                    <h2 class="chapter-title">Breaking Point</h2>
+                    <p class="chapter-text">
+                        A post flops. Only 5,000 likes. The algorithm stops showing her content.
+                    </p>
+                    <p class="chapter-text">
+                        <span class="highlight">Panic</span> sets in. She posts more. Nothing works. 
+                        Brands start ghosting her. Her income drops 60%. 
+                        She buys likes. She buys followers. She buys comments.
+                    </p>
+                    <div style="margin: 2rem 0;">
+                        <span class="stat">Engagement rate: 0.8% ↓</span>
+                        <span class="stat">Lost 3 major brand deals</span>
+                        <span class="stat">$2,400 spent on fake engagement</span>
+                    </div>
+                    <p class="chapter-text">
+                        She hasn't left her apartment in 2 weeks. Her room is filled with unopened PR packages—
+                        <span class="highlight">147 skincare products, 89 fashion items, 63 tech gadgets</span>. 
+                        All the same. All meaningless.
+                    </p>
+                    <p class="chapter-text">
+                        She's crying while editing photos. She filters her skin until she doesn't look human. 
+                        She schedules 20 posts a day hoping one will save her.
+                    </p>
+                    <p class="chapter-text" style="color: #f44336; font-weight: 600; margin-top: 1.5rem;">
+                        "Maybe I'm not good enough," she whispers to herself at 3 AM.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Chapter 5 -->
+            <section id="chapter5" class="chapter-section">
+                <div class="chapter-content">
+                    <div class="chapter-number">CHAPTER 05</div>
+                    <h2 class="chapter-title">Consumed</h2>
+                    <p class="chapter-text">
+                        Jane is scrolling. She's been scrolling for 6 hours straight. She can't stop.
+                    </p>
+                    <p class="chapter-text">
+                        The algorithm <span class="highlight">knows</span>. It knows she's vulnerable. 
+                        It knows she's desperate. It knows exactly what to show her.
+                    </p>
+                    
+                    <div class="algorithm-box">
+                        <h3>RECOMMENDATION ALGORITHM</h3>
+                        <div class="algorithm-line">USER_ID: 892047</div>
+                        <div class="algorithm-line">ENGAGEMENT_SCORE: 9.8/10</div>
+                        <div class="algorithm-line">VULNERABILITY_INDEX: CRITICAL</div>
+                        <div class="algorithm-line">STATUS: ADDICTED</div>
+                        <div class="algorithm-line" style="margin-top: 1rem;">RECOMMENDATIONS:</div>
+                        <div class="algorithm-line">→ "10 signs you're failing as an influencer"</div>
+                        <div class="algorithm-line">→ "Everyone hates you and here's why"</div>
+                        <div class="algorithm-line">→ "Your best days are behind you"</div>
+                        <div class="algorithm-line warning" style="margin-top: 1rem;">→ "How to end it all peacefully"</div>
+                    </div>
+
+                    <p class="chapter-text" style="color: #9c27b0; margin-top: 2rem;">
+                        The platform has extracted everything from her:
+                    </p>
+                    <div style="margin: 1.5rem 0;">
+                        <span class="stat">Her time: 47,520 hours</span>
+                        <span class="stat">Her mental health: Destroyed</span>
+                        <span class="stat">Her relationships: Lost</span>
+                        <span class="stat">Her identity: Commodified</span>
+                    </div>
+                    
+                    <p class="chapter-text" style="font-size: 1.2rem; text-align: center; color: #f44336; font-weight: 600; margin-top: 2rem;">
+                        She's scrolling through suicide methods.
+                    </p>
+                    <p class="chapter-text" style="text-align: center; color: #888; font-style: italic;">
+                        The algorithm recommends three more posts.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Final Stats -->
+            <section id="final-stats">
+                <h2 class="final-title">THIS IS NOT FICTION</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">300m</div>
+                        <div class="stat-label">Average scroll distance per user per year (equivalent to 1,000+ Empire State Buildings)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2.7x</div>
+                        <div class="stat-label">Increase in teen suicide rates since social media mainstream adoption (2010-2023)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">41%</div>
+                        <div class="stat-label">Of young people report feeling "addicted" to social media</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$500B</div>
+                        <div class="stat-label">Combined annual revenue from your attention (Meta, Google, TikTok, X)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">58%</div>
+                        <div class="stat-label">Of teen girls report Instagram makes them feel worse about their bodies</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$2,847</div>
+                        <div class="stat-label">Your estimated lifetime value to advertisers</div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 4rem; font-size: 1.3rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; color: #ccc; text-align: center;">
+                    Every day, millions of people like Jane are being consumed by platforms designed to be addictive. 
+                    The designers knew exactly what they were doing.
+                </p>
+
+                <p style="margin-top: 2rem; font-size: 1.2rem; color: #9c27b0; font-style: italic; text-align: center;">
+                    "The scroll is the loss."
+                </p>
+            </section>
+
+            <!-- Resources -->
+            <section id="resources">
+                <h2 class="resources-title">You Can Break Free</h2>
+                <p class="resources-intro">
+                    The people who built these systems are now fighting against them. 
+                    Aza Raskin, who invented infinite scroll, calls it his biggest regret. 
+                    Tristan Harris, former Google design ethicist, dedicates his life to exposing these tactics.
+                    <br><br>
+                    <strong style="color: #4CAF50;">You don't have to be the next Jane. Here's how to start:</strong>
+                </p>
+
+                <div class="action-steps">
+                    <h3>Immediate Actions You Can Take Today</h3>
+                    <ul>
+                        <li>Turn off ALL non-essential notifications right now</li>
+                        <li>Remove social media apps from your phone home screen</li>
+                        <li>Enable Screen Time limits (2 hours max for social media)</li>
+                        <li>Switch your phone to grayscale mode to reduce dopamine triggers</li>
+                        <li>Delete at least one social media app for 7 days (just try it)</li>
+                        <li>Set "Do Not Disturb" as your default mode</li>
+                        <li>Unfollow accounts that make you feel inadequate</li>
+                        <li>Schedule "phone-free" time blocks daily</li>
+                    </ul>
+                </div>
+
+                <div class="resource-grid">
+                    <a href="https://www.humanetech.com/" target="_blank" class="resource-card">
+                        <h4>Center for Humane Technology</h4>
+                        <p>Founded by tech insiders who built these systems and now fight to realign technology with humanity's best interests.</p>
+                    </a>
+                    
+                    <a href="https://www.thesocialdilemma.com/" target="_blank" class="resource-card">
+                        <h4>The Social Dilemma</h4>
+                        <p>Netflix documentary featuring the engineers who built your feeds. They explain exactly how you're being manipulated.</p>
+                    </a>
+                    
+                    <a href="https://www.tristanharris.com/" target="_blank" class="resource-card">
+                        <h4>Tristan Harris</h4>
+                        <p>Former Google design ethicist. His TED talks expose how tech hijacks our minds and what we can do about it.</p>
+                    </a>
+                    
+                    <a href="https://www.samhsa.gov/find-help/national-helpline" target="_blank" class="resource-card">
+                        <h4>Mental Health Support</h4>
+                        <p>If you're struggling: SAMHSA National Helpline (US): 1-800-662-4357. Free, confidential, 24/7 support.</p>
+                    </a>
+
+                    <a href="https://anxietycanada.com/articles/technology-can-be-addicting/" target="_blank" class="resource-card">
+                        <h4>Anxiety Canada</h4>
+                        <p>Professional mental health resources for digital addiction, anxiety, and depression linked to social media.</p>
+                    </a>
+
+                    <a href="https://extractivism.online/" target="_blank" class="resource-card">
+                        <h4>The New Extractivism</h4>
+                        <p>Vladan Joler's visualization of how platforms extract everything from you: data, attention, emotion, identity.</p>
+                    </a>
+                </div>
+
+                <div style="margin-top: 4rem; padding: 3rem; background: rgba(76, 175, 80, 0.05); border-radius: 15px; border: 1px solid rgba(76, 175, 80, 0.2); max-width: 800px; margin-left: auto; margin-right: auto;">
+                    <h3 style="color: #4CAF50; text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem;">Remember This</h3>
+                    <p style="text-align: center; color: #ccc; line-height: 1.8; font-size: 1.1rem;">
+                        You are not the problem. The system is designed to addict you. 
+                        But awareness is power. Every scroll you resist is an act of rebellion. 
+                        Every notification you ignore is reclaiming your autonomy.
+                        <br><br>
+                        <strong style="color: #4CAF50; font-size: 1.2rem;">Jane's story doesn't have to be yours.</strong>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Credits -->
+            <section id="credits">
+                <p style="font-size: 1rem; margin-bottom: 1rem;">SCROLL/FADE © 2025</p>
+                <p style="margin-bottom: 2rem;">A critical exploration of platform capitalism and attention extraction</p>
+                <p style="margin-bottom: 0.5rem;">
+                    Inspired by <a href="https://extractivism.online/" target="_blank">The New Extractivism</a> by Vladan Joler
+                </p>
+                <p style="margin-bottom: 0.5rem;">
+                    Informed by the <a href="https://criticalengineering.org/" target="_blank">Critical Engineering Manifesto</a>
+                </p>
+                <p style="margin-bottom: 0.5rem;">
+                    Guided by <a href="https://www.humanetech.com/" target="_blank">Center for Humane Technology</a>
+                </p>
+                <p style="margin-top: 2rem; font-size: 0.85rem; color: #555;">
+                    This project was built using the same digital tools it critiques.<br>
+                    The irony is intentional. The awareness is essential.
+                </p>
+            </section>
+        </div>
+    </div>
+
+    <!-- Consumption Wall - Final Stage -->
+    <div class="consumption-wall" id="consumption-wall"></div>
+
+    <script>
+        // Configuration
+        const shoppingIcons = [
+            '💄', '👗', '👠', '👜', '💍', '⌚', '🕶️', '👕',
+            '🏠', '🚗', '✈️', '🍔', '☕', '📱', '💻', '🎮',
+            '🛍️', '💳', '💰', '🎁', '📦', '🏡', '🚙', '👔',
+            '💅', '🧴', '🎨', '📸', '🎧', '⭐', '✨', '💫'
+        ];
+
+        // State
+        let scrollDistance = 0;
+        let lastScrollY = 0;
+        let iconSpawnTimer = 0;
+        let shoppingIconElements = [];
+        let consumptionWallBuilt = false;
+        let lastProgress = 0;
+
+        // Elements
+        const charName = document.getElementById('char-name');
+        const charStatus = document.getElementById('char-status');
+        const head = document.querySelector('.char-head');
+        const body = document.querySelector('.char-body');
+        const eyes = document.querySelectorAll('.eye');
+        const eyeBags = document.querySelectorAll('.eye-bags');
+        const blushes = document.querySelectorAll('.blush');
+        const lips = document.querySelector('.lips');
+        const lipGloss = document.querySelector('.lip-gloss');
+        const mouthCurve = document.querySelector('.mouth-curve');
+        const hair = document.querySelector('.hair');
+        const phone = document.querySelector('.phone');
+        const legs = document.querySelectorAll('.leg');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Remove last spawned icon (reverse)
+        function removeLastIcon() {
+            if (shoppingIconElements.length > 0) {
+                const lastIcon = shoppingIconElements[shoppingIconElements.length - 1];
+                lastIcon.style.opacity = '0';
+                lastIcon.style.transform = 'scale(0) rotate(180deg)';
+                setTimeout(() => {
+                    lastIcon.remove();
+                    shoppingIconElements.pop();
+                }, 200);
+            }
+        }
+
+        // Clear ALL icons when leaving chapter 5
+        function clearAllIcons() {
+            shoppingIconElements.forEach(icon => {
+                icon.style.opacity = '0';
+                icon.style.transform = 'scale(0)';
+                setTimeout(() => icon.remove(), 300);
+            });
+            shoppingIconElements = [];
+        }
+
+        // Spawn shopping icon from phone - sticks to Jane
+        function spawnShoppingIcon() {
+            // Get phone position from LEFT panel (Jane's side)
+            const leftPanel = document.querySelector('.left-panel');
+            const characterContainer = document.querySelector('.character-container');
+            
+            if (!leftPanel || !characterContainer) return;
+            
+            const leftPanelRect = leftPanel.getBoundingClientRect();
+            const charRect = characterContainer.getBoundingClientRect();
+            
+            // Phone position (Jane's hand)
+            const phoneX = charRect.left + charRect.width * 0.75;
+            const phoneY = charRect.top + charRect.height * 0.6;
+            
+            // Target position on Jane's body (random spot)
+            const targetX = charRect.left + Math.random() * charRect.width;
+            const targetY = charRect.top + Math.random() * charRect.height;
+
+            const icon = document.createElement('div');
+            icon.className = 'shopping-icon';
+            icon.textContent = shoppingIcons[Math.floor(Math.random() * shoppingIcons.length)];
+            icon.style.left = `${phoneX}px`;
+            icon.style.top = `${phoneY}px`;
+            
+            document.body.appendChild(icon);
+            shoppingIconElements.push(icon);
+
+            // Fly from phone to Jane's body
+            setTimeout(() => {
+                icon.style.opacity = '1';
+                icon.style.left = `${targetX}px`;
+                icon.style.top = `${targetY}px`;
+                icon.style.transform = `rotate(${Math.random() * 360}deg)`;
+            }, 10);
+
+            // Stick to Jane (don't remove)
+            setTimeout(() => {
+                icon.classList.add('stuck');
+            }, 800);
+        }
+
+        // Update character based on scroll
+        function updateCharacter() {
+            const scrollY = window.scrollY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = Math.min(1, scrollY / maxScroll);
+
+            // Update progress bar
+            progressBar.style.height = `${progress * 100}%`;
+
+            // Update scroll distance
+            scrollDistance += Math.abs(scrollY - lastScrollY);
+            document.getElementById('scroll-distance').textContent = (scrollDistance / 1000).toFixed(1);
+            document.getElementById('time-wasted').textContent = (scrollDistance / 150 / 60).toFixed(1);
+            lastScrollY = scrollY;
+
+            // Get elements
+            const eyeliners = document.querySelectorAll('.eyeliner');
+            const eyebrows = document.querySelectorAll('.eyebrow');
+            const hairLeft = document.querySelector('.hair-left');
+            const hairRight = document.querySelector('.hair-right');
+
+            // Stage 1: Happy Jane (0-0.15)
+            if (progress < 0.15) {
+                charName.textContent = 'Jane';
+                charStatus.textContent = 'Age 24 • Happy & Healthy';
+                charStatus.style.color = '#4CAF50';
+                
+                // Beautiful natural look
+                head.style.background = '#ffd5b8';
+                body.style.background = 'linear-gradient(180deg, #ff85b3 0%, #ffa0c9 100%)';
+                body.style.boxShadow = '0 5px 25px rgba(255, 133, 179, 0.4)';
+                
+                hair.style.background = 'linear-gradient(180deg, #3d2011 0%, #5a2f15 100%)';
+                hairLeft.style.background = 'linear-gradient(135deg, #3d2011 0%, #5a2f15 100%)';
+                hairRight.style.background = 'linear-gradient(225deg, #3d2011 0%, #5a2f15 100%)';
+                
+                eyeBags.forEach(b => b.style.background = 'rgba(120, 80, 150, 0)');
+                blushes.forEach(b => {
+                    b.style.opacity = '1';
+                    b.style.background = 'rgba(255, 150, 150, 0.4)';
+                });
+                
+                // BIG HAPPY SMILE
+                mouthCurve.style.borderColor = 'rgba(255, 105, 150, 0.6)';
+                mouthCurve.style.borderWidth = '3px';
+                mouthCurve.style.height = '15px';
+                mouthCurve.style.bottom = '10px';
+                
+                phone.style.opacity = '0';
+                
+                // Black cat-eyes - BIG Bratz style
+                eyes.forEach(e => {
+                    e.style.width = '18px';
+                    e.style.height = '14px';
+                    e.style.background = '#000';
+                });
+                
+                eyeliners.forEach(e => e.style.opacity = '0');
+                
+                // Lip gloss super shiny
+                lipGloss.style.opacity = '0.9';
+                
+                eyebrows.forEach(e => {
+                    e.style.background = '#000';
+                    e.style.height = '2px';
+                });
+                
+                document.querySelector('.eyebrow-left').style.transform = 'rotate(-15deg)';
+                document.querySelector('.eyebrow-right').style.transform = 'rotate(15deg)';
+            }
+            // Stage 2: Glamorous Influencer (0.15-0.35)
+            else if (progress < 0.35) {
+                charStatus.textContent = 'Rising Influencer • 50K Followers';
+                charStatus.style.color = '#ff9800';
+                
+                // More glamorous - makeup enhanced
+                head.style.background = '#ffe5d0';
+                body.style.background = 'linear-gradient(180deg, #ff69b4 0%, #ff8cc9 100%)';
+                body.style.boxShadow = '0 5px 30px rgba(255, 105, 180, 0.5)';
+                
+                // Styled hair
+                hair.style.background = 'linear-gradient(180deg, #2d1508 0%, #4a2412 100%)';
+                hairLeft.style.background = 'linear-gradient(135deg, #2d1508 0%, #4a2412 100%)';
+                hairRight.style.background = 'linear-gradient(225deg, #2d1508 0%, #4a2412 100%)';
+                
+                blushes.forEach(b => {
+                    b.style.opacity = '1';
+                    b.style.background = 'rgba(255, 120, 140, 0.5)';
+                });
+                
+                // HAPPY SMILE - still confident
+                mouthCurve.style.borderColor = 'rgba(255, 120, 140, 0.5)';
+                mouthCurve.style.borderWidth = '3px';
+                mouthCurve.style.height = '14px';
+                mouthCurve.style.bottom = '10px';
+                
+                // Eyeliner appears - THICK WINGED Bratz style
+                eyeliners.forEach(e => e.style.opacity = '1');
+                
+                // Lip gloss MAXIMUM shine
+                lipGloss.style.opacity = '1';
+                
+                // Eyes stay BIG cat-eye
+                eyes.forEach(e => {
+                    e.style.width = '18px';
+                    e.style.height = '14px';
+                    e.style.background = '#000';
+                });
+                
+                // Sharp eyebrows
+                eyebrows.forEach(e => {
+                    e.style.background = '#000';
+                    e.style.height = '2px';
+                });
+                
+                phone.style.opacity = '0.4';
+                phone.style.boxShadow = '0 0 15px rgba(0, 150, 255, 0.4)';
+            }
+            // Stage 3: Anxious but Glamorous (0.35-0.55)
+            else if (progress < 0.55) {
+                charStatus.textContent = '500K Followers • Exhausted';
+                charStatus.style.color = '#ff5722';
+                
+                // Still beautiful but tired
+                head.style.background = '#f5d5c0';
+                body.style.background = 'linear-gradient(180deg, #d96b9e 0%, #e88bb8 100%)';
+                body.style.boxShadow = '0 5px 25px rgba(217, 107, 158, 0.4)';
+                
+                // Hair less shiny
+                hair.style.background = 'linear-gradient(180deg, #3a1a08 0%, #4d2510 100%)';
+                hairLeft.style.background = 'linear-gradient(135deg, #3a1a08 0%, #4d2510 100%)';
+                hairRight.style.background = 'linear-gradient(225deg, #3a1a08 0%, #4d2510 100%)';
+                
+                // Slight eye bags starting
+                eyeBags.forEach(b => b.style.background = 'rgba(120, 80, 150, 0.3)');
+                
+                blushes.forEach(b => {
+                    b.style.opacity = '0.7';
+                    b.style.background = 'rgba(200, 120, 140, 0.4)';
+                });
+                
+                // NEUTRAL/SLIGHT WORRIED MOUTH
+                mouthCurve.style.borderColor = 'rgba(150, 100, 120, 0.4)';
+                mouthCurve.style.borderWidth = '2px';
+                mouthCurve.style.height = '10px';
+                mouthCurve.style.bottom = '12px';
+                
+                // Worried eyebrows
+                document.querySelector('.eyebrow-left').style.transform = 'rotate(-20deg) translateY(-2px)';
+                document.querySelector('.eyebrow-right').style.transform = 'rotate(20deg) translateY(-2px)';
+                
+                // Eyes slightly smaller but still cat-eye
+                eyes.forEach(e => {
+                    e.style.width = '17px';
+                    e.style.height = '13px';
+                    e.style.background = '#000';
+                });
+                
+                // Lip gloss fading
+                lipGloss.style.opacity = '0.6';
+                
+                phone.style.opacity = '0.7';
+                phone.style.boxShadow = '0 0 20px rgba(255, 150, 0, 0.5)';
+            }
+            // Stage 4: Breaking Down (0.55-0.75)
+            else if (progress < 0.75) {
+                charStatus.textContent = 'Breaking Down • Engagement ↓';
+                charStatus.style.color = '#f44336';
+                
+                // If coming from stage 5, clear ALL icons
+                if (lastProgress >= 0.75 && shoppingIconElements.length > 0) {
+                    clearAllIcons();
+                }
+                
+                // Clearly unhealthy
+                head.style.background = '#e5c0a8';
+                body.style.background = 'linear-gradient(180deg, #b8668a 0%, #c9779b 100%)';
+                body.style.boxShadow = '0 5px 20px rgba(180, 100, 130, 0.3)';
+                
+                // Dull, unkempt hair
+                hair.style.background = 'linear-gradient(180deg, #2d1405 0%, #3d1808 100%)';
+                hairLeft.style.background = 'linear-gradient(135deg, #2d1405 0%, #3d1808 100%)';
+                hairRight.style.background = 'linear-gradient(225deg, #2d1405 0%, #3d1808 100%)';
+                
+                // Dark eye bags
+                eyeBags.forEach(b => b.style.background = 'rgba(100, 50, 120, 0.7)');
+                
+                blushes.forEach(b => {
+                    b.style.opacity = '0.3';
+                    b.style.background = 'rgba(150, 100, 120, 0.3)';
+                });
+                
+                // CLEAR FROWN - SAD MOUTH
+                mouthCurve.style.borderColor = 'transparent';
+                mouthCurve.style.borderWidth = '0px';
+                mouthCurve.style.borderTop = '3px solid rgba(244, 67, 54, 0.6)';
+                mouthCurve.style.borderRadius = '50% 50% 0 0';
+                mouthCurve.style.height = '12px';
+                mouthCurve.style.bottom = '8px';
+                
+                // Sad eyebrows
+                document.querySelector('.eyebrow-left').style.transform = 'rotate(-25deg) translateY(-1px)';
+                document.querySelector('.eyebrow-right').style.transform = 'rotate(25deg) translateY(-1px)';
+                
+                // Smaller, tired cat-eyes
+                eyes.forEach(e => {
+                    e.style.width = '15px';
+                    e.style.height = '12px';
+                    e.style.background = '#000';
+                });
+                
+                // Lip gloss gone
+                lipGloss.style.opacity = '0';
+                
+                eyeliners.forEach(e => e.style.opacity = '0.3');
+                
+                phone.style.opacity = '1';
+                phone.style.boxShadow = '0 0 30px rgba(255, 0, 0, 0.7)';
+            }
+            // Stage 5: Consumed (0.75+) - CHAPTER 5
+            else {
+                charName.textContent = 'USER #892047';
+                charStatus.textContent = 'CONSUMED';
+                charStatus.style.color = '#9c27b0';
+                
+                phone.style.opacity = '1';
+                phone.style.boxShadow = '0 0 40px rgba(156, 39, 176, 1)';
+                
+                const fadeAmount = Math.min(1, (progress - 0.75) * 4);
+                
+                // Detect scroll direction
+                const scrollingDown = progress > lastProgress;
+                
+                if (scrollingDown) {
+                    // SCROLLING DOWN - SPAWN ICONS
+                    iconSpawnTimer++;
+                    if (iconSpawnTimer % 2 === 0) {
+                        spawnShoppingIcon();
+                    }
+                } else {
+                    // SCROLLING UP - REMOVE ICONS FASTER (REVERSE!)
+                    iconSpawnTimer++;
+                    if (iconSpawnTimer % 1 === 0) { // EVERY scroll = faster removal!
+                        removeLastIcon();
+                        removeLastIcon(); // Remove 2 at once!
+                    }
+                }
+                
+                lastProgress = progress;
+                
+                // Transformation to data/purple
+                head.style.background = `rgba(156, 39, 176, ${0.3 + fadeAmount * 0.5})`;
+                body.style.background = `rgba(156, 39, 176, ${0.3 + fadeAmount * 0.5})`;
+                body.style.boxShadow = '0 5px 35px rgba(156, 39, 176, 0.7)';
+                
+                hair.style.background = `rgba(80, 20, 100, ${0.4 + fadeAmount * 0.6})`;
+                hairLeft.style.background = `rgba(80, 20, 100, ${0.4 + fadeAmount * 0.6})`;
+                hairRight.style.background = `rgba(80, 20, 100, ${0.4 + fadeAmount * 0.6})`;
+                
+                // Maximum eye bags
+                eyeBags.forEach(b => b.style.background = 'rgba(80, 40, 100, 1)');
+                
+                blushes.forEach(b => b.style.opacity = '0');
+                
+                // FLAT MOUTH - no expression (empty/dead)
+                mouthCurve.style.borderColor = 'transparent';
+                mouthCurve.style.opacity = '0.3';
+                
+                // Lip gloss completely gone
+                lipGloss.style.opacity = '0';
+                
+                // Flat affect - no expression
+                eyebrows.forEach(e => {
+                    e.style.background = `rgba(80, 40, 100, ${0.5 + fadeAmount * 0.5})`;
+                    e.style.height = '2px';
+                });
+                
+                document.querySelector('.eyebrow-left').style.transform = 'rotate(0deg)';
+                document.querySelector('.eyebrow-right').style.transform = 'rotate(0deg)';
+                
+                // Empty cat-eyes - turning purple and smaller
+                eyes.forEach(e => {
+                    e.style.width = '12px';
+                    e.style.height = '10px';
+                    e.style.background = `rgba(80, 40, 100, ${0.6 + fadeAmount * 0.4})`;
+                });
+                
+                eyeliners.forEach(e => e.style.opacity = '0');
+                
+                // Fade and blur entire character
+                document.querySelector('.character-visual').style.opacity = 1 - fadeAmount * 0.6;
+                document.querySelector('.character-visual').style.filter = `blur(${fadeAmount * 10}px) hue-rotate(${fadeAmount * 90}deg)`;
+            }
+        }
+
+        // Throttled scroll handler
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    updateCharacter();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Initial call
+        updateCharacter();
+    </script>
+</body>
+</html>
